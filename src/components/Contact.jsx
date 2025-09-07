@@ -1,3 +1,5 @@
+// src/components/Contact.jsx
+
 import React from "react";
 import { Mail, Linkedin, Instagram, Twitter, Facebook, Send } from "lucide-react";
 

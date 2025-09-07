@@ -1,3 +1,5 @@
+// src/components/Enter.jsx
+
 import React from "react";
 
 const Enter = ({ todo, handleChange, handleAdd }) => {

@@ -1,3 +1,5 @@
+// src/components/Item.jsx
+
 import React from "react";
 
 const Item = ({showFinnished, text, onDelete, onEdit, onCheck }) => {

@@ -1,3 +1,5 @@
+// src/components/Services.jsx
+
 import React from "react";
 import { CheckCircle, Clock, Users } from "lucide-react"; // lucide-react icons use karein
 

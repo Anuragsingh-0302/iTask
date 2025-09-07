@@ -1,3 +1,5 @@
+// src/components/confirmD.jsx
+
 import React from 'react'
 
 const confirmD = () => {

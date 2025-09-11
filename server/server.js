@@ -1,3 +1,4 @@
+// server/server.js
 /* eslint-env node */
 /* global process */
 
@@ -5,6 +6,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import connectDB from "./config/db.js";
+import todoRoutes from "./routes/todoRoutes.js"; // 👈 import routes
 
 dotenv.config(); // .env load ho gaya
 
@@ -21,6 +23,8 @@ app.use(
   })
 );
 app.use(express.json());
+
+app.use("/api/todos", todoRoutes); // 👈 ab routes register ho gaye
 
 // test route
 app.get("/", (req, res) => {

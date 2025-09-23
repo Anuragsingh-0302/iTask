@@ -7,6 +7,10 @@ import cors from "cors";
 import dotenv from "dotenv";
 import connectDB from "./config/db.js";
 import todoRoutes from "./routes/todoRoutes.js"; // 👈 import routes
+import authRoutes from "./routes/authRoutes.js";
+import contactRoutes from "./routes/contactRoutes.js"; // 👈 import contact routes
+// ⏰ reminder service import (background scheduler)
+import "./services/reminderService.js";
 
 dotenv.config(); // .env load ho gaya
 
@@ -23,8 +27,15 @@ app.use(
   })
 );
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// routes
+
+app.use("/api/auth", authRoutes);
 
 app.use("/api/todos", todoRoutes); // 👈 ab routes register ho gaye
+
+app.use("/api/contact", contactRoutes); // 👈 contact routes register ho gaye
 
 // test route
 app.get("/", (req, res) => {

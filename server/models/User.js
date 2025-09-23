@@ -1,5 +1,4 @@
 // server/models/User.js
-
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
@@ -12,19 +11,26 @@ const userSchema = new mongoose.Schema(
     email: {
       type: String,
       required: true,
-      unique: true, // ek hi email se ek account
+      unique: true,
       lowercase: true,
       trim: true,
     },
     password: {
       type: String,
       required: true,
-      minlength: 6, // security
+      minlength: 6,
     },
     phone: {
       type: String,
-      required: false, // optional
-      match: [/^\d{10}$/, "Please enter a valid phone number"], // 10 digit ka
+      required: false,
+      match: [/^\+?[0-9]{10,13}$/, "Please enter a valid phone number"],
+    },
+    // 👇 Forgot/Reset Password ke liye fields add karo
+    resetPasswordToken: {
+      type: String,
+    },
+    resetPasswordExpire: {
+      type: Date,
     },
   },
   { timestamps: true }

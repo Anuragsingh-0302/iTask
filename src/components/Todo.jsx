@@ -1,163 +1,210 @@
 // src/components/Todo.jsx
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import Line from "./line";
 import Enter from "./Enter";
 import Item from "./Item";
-import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
-import ConfirmD from "./confirmD";
+import { AuthContext } from "../context/AuthContext";
+import axios from "axios";
+import { toast } from "react-toastify";
+import { showError, showSuccess, showInfo, showWarning } from "../utils/toastUtils";
 
 const Todo = () => {
+  const { user } = useContext(AuthContext);
+
   const [todo, setTodo] = useState("");
   const [todos, setTodos] = useState([]);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editIndex, setEditIndex] = useState(null);
   const [showFinished, setShowFinished] = useState(true);
 
+  // ----------------------------
+  // LocalStorage helpers (Guest Mode)
+  // ----------------------------
   const saveToLS = (todos) => {
     localStorage.setItem("todos", JSON.stringify(todos));
   };
-  // saveToLS();
 
-  useEffect(() => {
-    const storedTodos = localStorage.getItem("todos");
+  const loadFromLS = () => {
     try {
+      const storedTodos = localStorage.getItem("todos");
       if (storedTodos) {
-        const parsed = JSON.parse(storedTodos);
-        setTodos(parsed);
+        return JSON.parse(storedTodos);
       }
     } catch (err) {
       console.error("Error parsing todos from localStorage", err);
     }
-  }, []);
-
-  const handleChange = (e) => {
-    setTodo(e.target.value);
+    return [];
   };
 
-  const handleAdd = () => {
+  // ----------------------------
+  // Load todos on mount
+  // ----------------------------
+  useEffect(() => {
+    if (user) {
+      const fetchTodos = async () => {
+        try {
+          const res = await axios.get("http://localhost:5000/api/todos", {
+            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          });
+          setTodos(res.data);
+        } catch (err) {
+          console.error("Error fetching todos from backend", err);
+        }
+      };
+      fetchTodos();
+    } else {
+      setTodos(loadFromLS());
+    }
+  }, [user]);
+
+  // ----------------------------
+  // Handlers
+  // ----------------------------
+  const handleChange = (e) => setTodo(e.target.value);
+
+  const handleAdd = async () => {
     if (todo.trim() === "") return;
 
-    if (isEditing) {
-      const updatedTodos = [...todos];
-      updatedTodos[editIndex] = { ...updatedTodos[editIndex], todo }; // Updating only the todo text
-      setTodos(updatedTodos);
-      saveToLS(updatedTodos);
-      setIsEditing(false);
-      setEditIndex(null);
+    const newTodo = {
+      id: uuidv4(),
+      todo,
+      isChecked: false,
+      dueDate: null,
+      priority: "medium",
+      category: "general",
+      isCompleted: false,
+    };
+
+    if (user) {
+      try {
+        const res = await axios.post(
+          "http://localhost:5000/api/todos",
+          newTodo,
+          { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+        );
+        setTodos([...todos, res.data.todo]);
+        showSuccess("Todo added");
+      } catch (err) {
+        console.error("Error adding todo", err);
+      }
     } else {
-      setTodos([...todos, { id: uuidv4(), todo, isChecked: false }]);
-      // Add a new todo item with a unique ID
+      const newTodos = [...todos, newTodo];
+      setTodos(newTodos);
+      saveToLS(newTodos);
     }
+
     setTodo("");
-    saveToLS(todos);
   };
 
-  const handleDelete = (id) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this todo?"
+  const handleDelete = async (id, backendId) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this todo?");
+    if (!confirmDelete) return;
+
+    const newTodos = todos.filter((item) => (user ? item._id !== backendId : item.id !== id));
+    setTodos(newTodos);
+
+    if (user) {
+      try {
+        await axios.delete(`http://localhost:5000/api/todos/${backendId}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        });
+        showInfo("Todo deleted");
+      } catch (err) {
+        console.error("Error deleting todo", err);
+      }
+    } else {
+      saveToLS(newTodos);
+    }
+  };
+
+  const handleCheck = async (id, backendId) => {
+    const index = todos.findIndex((item) =>
+      user ? item._id === backendId : item.id === id
     );
-    if (!confirmDelete) return; // If user cancels, do nothing
-    const newTodos = todos.filter((item) => item.id !== id); // Filter out the deleted todo by id
-    if (id === todos[editIndex]?.id) {
-      // Deleted the item being edited
-      setIsEditing(false);
-      setEditIndex(null);
-      setTodo("");
-    } else if (
-      editIndex !== null &&
-      todos[editIndex]?.id &&
-      todos[editIndex]?.id > id
-    ) {
-      // Deleted an item above the one being edited
-      setEditIndex(editIndex - 1); // Adjusting editIndex if the deleted item was above the edited item
-    }
+    if (index === -1) return;
+
+    const newTodos = [...todos];
+    newTodos[index].isChecked = !newTodos[index].isChecked;
     setTodos(newTodos);
-    saveToLS(newTodos);
-  };
 
-  const handleEdit = (id) => {
-    const index = todos.findIndex((item) => item.id === id);
-    if (todos[index].isChecked) {
-      alert("You can't edit a finished todo");
-      setTodo("");
-      setIsEditing(false);
-      setEditIndex(null);
-      return;
+    if (user) {
+      try {
+        await axios.put(
+          `http://localhost:5000/api/todos/${backendId}`,
+          newTodos[index],
+          { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+        );
+        showSuccess(`Todo marked as ${newTodos[index].isChecked ? "completed" : "incomplete"}`);
+      } catch (err) {
+        console.error("Error toggling todo", err);
+      }
+    } else {
+      saveToLS(newTodos);
     }
-    setTodo(todos[index].todo);
-    setIsEditing(true);
-    setEditIndex(index);
   };
 
-  const handleCheck = (id) => {
-    const index = todos.findIndex((item) => item.id === id); // Finding the todo by id
-    if (index === -1) return; // If not found, do nothing
-    const newTodos = [...todos]; // Creating a copy to avoid mutation
-    newTodos[index].isChecked = !newTodos[index].isChecked; // Toggle the checked state
-    setTodos(newTodos);
-    saveToLS(todos);
-  };
-
+  // ----------------------------
+  // Render
+  // ----------------------------
   return (
-    <div
-      className="lg:w-[60vw] w-[95vw] mx-auto mt-4 min-h-screen bg-slate-300 rounded-[20px] p-5 shadow-lg transition-all duration-200 ease-linear"
-      style={{ boxShadow: "0 4px 8px #69d7ff" }}
-    >
-      <h1 className="text-center mb-4">
-        <span
-          className="text-3xl font-bold inline-block lg:w-[40%] w-[80%] shadow-lg rounded-[20px] p-2 transition-all duration-200 ease-linear"
-          style={{ boxShadow: "0 4px 8px #69d7ff" }}
-        >
-          YOUR TODOS
+    <div className="lg:w-[60vw] w-[95vw] mx-auto my-10 min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl p-8 shadow-2xl">
+      {/* Heading */}
+      <h1 className="text-center mb-6">
+        <span className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-teal-500 drop-shadow-lg">
+          iTask – Your Todos ({user ? "Online" : "Guest"})
         </span>
       </h1>
-      <div>
-        <h2 className="text-2xl font-bold">Add your todos</h2>
-      </div>
-      <div>
+
+      {/* Add Section */}
+      <div className="bg-white shadow-md rounded-xl p-5 mb-6">
+        <h2 className="text-xl font-semibold text-gray-700 mb-4">Add a new task</h2>
         <Enter todo={todo} handleChange={handleChange} handleAdd={handleAdd} />
       </div>
-      <div className="showF">
-        <label className="flex items-center">
-          <input
-            type="checkbox"
-            checked={showFinished}
-            onChange={() => setShowFinished(!showFinished)}
-            className="mr-2"
-          />
-          Show Finished
-        </label>
-      </div>
-      <Line />
-      {todos.map((item) => (
-        <Item
-          showFinnished={showFinished}
-          key={item.id} // Use item.id as key for unique identification
-          text={item}
-          onCheck={() => handleCheck(item.id)} // Pass item.id to handleCheck
-          onDelete={() => handleDelete(item.id)} // Pass item.id to handleDelete
-          onEdit={() => handleEdit(item.id)} // Pass item.id to handleEdit
+
+      {/* Show Finished Toggle */}
+      <div className="flex items-center mb-4 gap-2">
+        <input
+          type="checkbox"
+          checked={showFinished}
+          onChange={() => setShowFinished(!showFinished)}
+          className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
         />
-      ))}
-      {todos.length === 0 && (
-        <div className="text-center text-gray-500 mt-4">
-          No todos available. Please add some!
+        <label className="text-gray-700 font-medium">Show Finished</label>
+      </div>
+
+      <Line />
+
+      {/* Todo List */}
+      <div className="space-y-3 mt-4">
+        {todos.length === 0 ? (
+          <div className="text-center text-gray-500 italic">No todos yet. Add one above!</div>
+        ) : (
+          todos.map((item) => (
+            <Item
+              showFinished={showFinished}
+              key={user ? item._id : item.id}
+              text={item}
+              onCheck={() => handleCheck(item.id, item._id)}
+              onDelete={() => handleDelete(item.id, item._id)}
+            />
+          ))
+        )}
+      </div>
+
+      {/* Summary */}
+      {todos.length > 0 && (
+        <div className="flex justify-between items-center bg-white shadow-inner rounded-xl p-4 mt-6 text-gray-700">
+          <div className="font-medium">
+            Total: <span className="font-bold">{todos.length}</span>
+          </div>
+          <div className="font-medium">
+            Completed:{" "}
+            <span className="font-bold text-green-600">
+              {todos.filter((item) => item.isChecked).length}
+            </span>
+          </div>
         </div>
       )}
-      <div className="comp flex items-center justify-around mt-4">
-        {todos.length > 0 && (
-          <div className="text-center text-gray-500 mt-4">
-            You have {todos.length} todo{todos.length > 1 ? "s" : ""}.
-          </div>
-        )}
-        {todos.length > 0 && (
-          <div className="text-center text-gray-500 mt-4">
-            {todos.filter((item) => item.isChecked).length} completed
-          </div>
-        )}
-      </div>
     </div>
   );
 };

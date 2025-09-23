@@ -1,48 +1,65 @@
 // src/components/Item.jsx
 
 import React from "react";
+import { FaTrash } from "react-icons/fa";
+import { MdCheckBox, MdCheckBoxOutlineBlank } from "react-icons/md";
 
-const Item = ({showFinnished, text, onDelete, onEdit, onCheck }) => {
-  return (showFinnished || !text.isChecked ) && (
-    <div className="flex sm:flex-row flex-col justify-between items-center transition-all duration-200 ease-linear  rounded-[20px] px-3 py-2 mt-2.5 shadow-sm ">
-      <div className="text flex items-center gap-4 sm:w-[80%] w-[90%] ">
-        <input
-          onChange={onCheck}
-          type="checkbox"
-          name={text.id} // Use text.id instead of todo.id
-          checked={text.isChecked} // Bind checkbox state
-          id={`todo-${text.id}`} // Unique ID for each checkbox
-          className="w-4 h-4 mt-1 cursor-pointer"
-        />
-        <span
-          className={`${
-            text.isChecked ? "line-through" : ""
-          } text-xl font-semibold w-[70%] break-words`}
-          style={{
-            wordWrap: "break-word", // Ensure the text breaks if too long
-            whiteSpace: "normal", // Allow wrapping of long text
-          }}
-        >
-          {text.todo}
-        </span>
+const Item = ({ text, showFinished, onCheck, onDelete }) => {
+  if (!showFinished && text.isChecked) return null;
+
+  // Format date if available
+  const formatDate = (date) => {
+    if (!date) return "No due date";
+    return new Date(date).toLocaleDateString();
+  };
+
+  return (
+    <div
+      className={`flex items-center justify-between bg-white p-4 rounded-xl shadow-md mb-3 transition-all duration-200 ${
+        text.isChecked ? "opacity-70 line-through" : ""
+      }`}
+    >
+      {/* Left: Checkbox + Todo text */}
+      <div className="flex items-center gap-3">
+        <button onClick={onCheck} className="text-blue-600 text-2xl">
+          {text.isChecked ? <MdCheckBox /> : <MdCheckBoxOutlineBlank />}
+        </button>
+        <span className="font-medium text-lg">{text.todo}</span>
       </div>
-      <div className="buttons sm:mt-0 mt-4 flex items-center justify-center transition-all duration-200 ease-linear sm:gap-4 gap-[15vw]">
-        <div className="edit">
-          <span
-            onClick={onEdit}
-            className="material-symbols-outlined hover:text-blue-500 cursor-pointer "
-          >
-            edit
-          </span>
-        </div>
-        <div className="delete">
-          <span
-            onClick={onDelete}
-            className="material-symbols-outlined hover:text-blue-500 cursor-pointer "
-          >
-            delete
-          </span>
-        </div>
+
+      {/* Right: Details + Delete */}
+      <div className="flex items-center gap-5">
+        {/* Category */}
+        <span className="px-3 py-1 text-sm rounded-lg bg-yellow-100 text-yellow-700">
+          {text.category || "General"}
+        </span>
+
+        {/* Priority */}
+        <span
+          className={`px-3 py-1 text-sm rounded-lg ${
+            text.priority === "high"
+              ? "bg-red-100 text-red-700"
+              : text.priority === "low"
+              ? "bg-green-100 text-green-700"
+              : "bg-blue-100 text-blue-700"
+          }`}
+        >
+          {text.priority || "Medium"}
+        </span>
+
+        {/* Due Date */}
+        <span className="px-3 py-1 text-sm rounded-lg bg-gray-100 text-gray-700">
+          {formatDate(text.dueDate)}
+        </span>
+
+        {/* Delete Button */}
+        <button
+          onClick={onDelete}
+          className="text-red-600 hover:text-red-800 text-xl"
+          title="Delete Todo"
+        >
+          <FaTrash />
+        </button>
       </div>
     </div>
   );

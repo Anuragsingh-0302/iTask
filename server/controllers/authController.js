@@ -22,7 +22,6 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-
 // 🟢 Signup Request → Send OTP
 export const signupRequest = async (req, res) => {
   try {
@@ -48,9 +47,57 @@ export const signupRequest = async (req, res) => {
       await transporter.sendMail({
         from: `"iTask Support" <${process.env.EMAIL_USER}>`,
         to: email,
-        subject: "Signup OTP Verification",
-        text: `Your OTP is ${otp}. It will expire in 10 minutes.`,
+        subject: "🔐 Verify your iTask account",
+        html: `
+    <div style="font-family: 'Segoe UI', Tahoma, sans-serif; background:#f4f7fb; padding:40px;">
+      <div style="max-width:600px; margin:auto; background:#ffffff; border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,0.1); overflow:hidden;">
+        
+        <!-- Header -->
+        <div style="background:linear-gradient(135deg,#2563eb,#1e40af); padding:20px; text-align:center;">
+          <h1 style="color:#fff; margin:0; font-size:24px;">iTask</h1>
+          <p style="color:#e0e7ff; margin:5px 0 0; font-size:14px;">Smart Task Management</p>
+        </div>
+
+        <!-- Body -->
+        <div style="padding:30px;">
+          <h2 style="color:#111827; font-size:22px; margin-bottom:15px;">Hello ${name},</h2>
+          <p style="color:#374151; font-size:16px; line-height:1.6;">
+            Thanks for signing up! To complete your registration, please verify your email address by entering the following OTP:
+          </p>
+
+          <div style="text-align:center; margin:30px 0;">
+            <div style="display:inline-block; background:#2563eb; color:#fff; font-size:28px; letter-spacing:6px; padding:16px 28px; border-radius:10px; font-weight:600; box-shadow:0 4px 10px rgba(37,99,235,0.4);">
+              ${otp}
+            </div>
+          </div>
+
+          <p style="color:#374151; font-size:15px;">
+            ⚠️ This OTP is valid for <b>10 minutes</b>. Please keep it secure and do not share it with anyone.
+          </p>
+          <p style="color:#6b7280; font-size:14px; margin-top:25px;">
+            If you didn’t request this, you can ignore this email.
+          </p>
+        </div>
+
+        <!-- Footer -->
+        <div style="background:#f9fafb; padding:15px; text-align:center; border-top:1px solid #e5e7eb;">
+          <p style="margin:0; color:#6b7280; font-size:13px;">
+            © ${new Date().getFullYear()} iTask. All rights reserved.<br/>
+            <span style="color:#9ca3af;">Helping you stay organized ✅</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  `,
+        text: `Hello ${name},
+
+Your OTP for verifying your iTask account is: ${otp}
+
+It will expire in 10 minutes. Please keep it secure and do not share with anyone.
+
+- iTask Team`,
       });
+
       console.log("✅ Email sent successfully:", email);
     } catch (err) {
       console.error("❌ Email send failed:", err);
@@ -77,8 +124,8 @@ export const verifyOtp = async (req, res) => {
       return res.status(400).json({ message: "Email and OTP required" });
 
     const otpRecord = await Otp.findOne({ email, otp });
-    console.log('otpRecord:', otpRecord);
-    
+    console.log("otpRecord:", otpRecord);
+
     if (!otpRecord) return res.status(400).json({ message: "Invalid OTP" });
 
     if (otpRecord.expiresAt < new Date()) {
@@ -97,8 +144,7 @@ export const verifyOtp = async (req, res) => {
       phone: otpRecord.phone,
     });
 
-    console.log('newUser:', newUser);
-    
+    console.log("newUser:", newUser);
 
     // OTP delete
     await Otp.deleteMany({ email });
@@ -181,13 +227,58 @@ export const forgotPassword = async (req, res) => {
     await transporter.sendMail({
       from: `"iTask Support" <${process.env.EMAIL_USER}>`,
       to: user.email,
-      subject: "Password Reset Request",
+      subject: "🔑 Reset your iTask password",
       html: `
-        <p>Hello ${user.name},</p>
-        <p>You requested to reset your password.</p>
-        <p>Click here to reset: <a href="${resetUrl}">${resetUrl}</a></p>
-        <p>This link is valid for 15 minutes.</p>
-      `,
+    <div style="font-family: 'Segoe UI', Tahoma, sans-serif; background:#f4f7fb; padding:40px;">
+      <div style="max-width:600px; margin:auto; background:#ffffff; border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,0.1); overflow:hidden;">
+        
+        <!-- Header -->
+        <div style="background:linear-gradient(135deg,#f59e0b,#d97706); padding:20px; text-align:center;">
+          <h1 style="color:#fff; margin:0; font-size:24px;">iTask</h1>
+          <p style="color:#fde68a; margin:5px 0 0; font-size:14px;">Secure Password Recovery</p>
+        </div>
+
+        <!-- Body -->
+        <div style="padding:30px;">
+          <h2 style="color:#111827; font-size:22px; margin-bottom:15px;">Hello ${
+            user.name
+          },</h2>
+          <p style="color:#374151; font-size:16px; line-height:1.6;">
+            We received a request to reset your iTask account password. If this was you, click the button below to set a new password.
+          </p>
+
+          <div style="text-align:center; margin:30px 0;">
+            <a href="${resetUrl}" target="_blank" 
+              style="background:#f59e0b; color:#fff; font-size:18px; font-weight:600; text-decoration:none; padding:14px 28px; border-radius:10px; display:inline-block; box-shadow:0 4px 12px rgba(245,158,11,0.4);">
+              Reset Password
+            </a>
+          </div>
+
+          <p style="color:#374151; font-size:15px;">
+            ⚠️ This password reset link is valid for <b>15 minutes</b>. If you didn’t request a reset, you can safely ignore this email.
+          </p>
+        </div>
+
+        <!-- Footer -->
+        <div style="background:#f9fafb; padding:15px; text-align:center; border-top:1px solid #e5e7eb;">
+          <p style="margin:0; color:#6b7280; font-size:13px;">
+            © ${new Date().getFullYear()} iTask. All rights reserved.<br/>
+            <span style="color:#9ca3af;">Your tasks, your control 🔒</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  `,
+      text: `Hello ${user.name},
+
+We received a request to reset your iTask password.  
+Click the link below to set a new password:
+
+${resetUrl}
+
+This link will expire in 15 minutes. If you did not request this, ignore this email.
+
+- iTask Team`,
     });
 
     res.json({ message: "Password reset link sent to your email" });

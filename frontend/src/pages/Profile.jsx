@@ -28,7 +28,7 @@ const Profile = () => {
     try {
       setLoading(true);
       const res = await axios.put(
-        "http://localhost:5000/api/auth/update-profile",
+        `${import.meta.env.VITE_API_URL}/auth/update-profile`,
         formData,
         { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
       );
@@ -53,7 +53,7 @@ const Profile = () => {
     try {
       setLoading(true);
       const res = await axios.put(
-        "http://localhost:5000/api/auth/change-password",
+        `${import.meta.env.VITE_API_URL}/auth/change-password`,
         {
           currentPassword: passwordData.currentPassword,
           newPassword: passwordData.newPassword,

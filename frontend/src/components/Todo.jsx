@@ -43,7 +43,7 @@ const Todo = () => {
     if (user) {
       const fetchTodos = async () => {
         try {
-          const res = await axios.get("http://localhost:5000/api/todos", {
+          const res = await axios.get(`${import.meta.env.VITE_API_URL}/todos`, {
             headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
           });
           setTodos(res.data);
@@ -78,7 +78,7 @@ const Todo = () => {
     if (user) {
       try {
         const res = await axios.post(
-          "http://localhost:5000/api/todos",
+          `${import.meta.env.VITE_API_URL}/todos`,
           newTodo,
           { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
         );
@@ -105,7 +105,7 @@ const Todo = () => {
 
     if (user) {
       try {
-        await axios.delete(`http://localhost:5000/api/todos/${backendId}`, {
+        await axios.delete(`${import.meta.env.VITE_API_URL}/todos/${backendId}`, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
         showInfo("Todo deleted");
@@ -130,7 +130,7 @@ const Todo = () => {
     if (user) {
       try {
         await axios.put(
-          `http://localhost:5000/api/todos/${backendId}`,
+          `${import.meta.env.VITE_API_URL}/todos/${backendId}`,
           newTodos[index],
           { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
         );

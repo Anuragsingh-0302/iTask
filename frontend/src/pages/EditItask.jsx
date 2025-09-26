@@ -17,7 +17,7 @@ const EditItask = () => {
     const fetchTodos = async () => {
       if (isLoggedIn) {
         try {
-          const res = await axios.get("http://localhost:5000/api/todos", {
+          const res = await axios.get(`${import.meta.env.VITE_API_URL}/todos`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           setTodos(res.data);
@@ -39,7 +39,7 @@ const EditItask = () => {
     if (isLoggedIn) {
       try {
         await axios.put(
-          `http://localhost:5000/api/todos/${editingTodo._id}`,
+          `${import.meta.env.VITE_API_URL}/todos/${editingTodo._id}`,
           editingTodo,
           { headers: { Authorization: `Bearer ${token}` } }
         );
